@@ -1,0 +1,23 @@
+# Personal documents and generated results - never commit these
+input/*
+!input/.gitkeep
+output/*
+!output/.gitkeep
+previews/
+logs/
+samples/
+samples_out/
+
+# Python
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+
+# OS / editor
+.DS_Store
+._*
+Thumbs.db
+.idea/
+.vscode/

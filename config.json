@@ -1,0 +1,56 @@
+{
+  "input_folder": "input",
+  "output_folder": "output",
+  "target_dpi": 800,
+  "output_mode": "grayscale",
+  "darkness_level": "low_toner",
+  "contrast_enhancement": true,
+  "adaptive_contrast": true,
+  "background_cleanup": true,
+  "denoise": true,
+  "sharpening": true,
+  "faint_text_enhancement": true,
+  "thin_line_enhancement": true,
+  "preserve_photographs": true,
+  "preserve_signatures": true,
+  "preserve_qr_codes": true,
+  "preserve_barcodes": true,
+  "preserve_stamps": true,
+  "preserve_seals": true,
+  "preserve_original_page_size": true,
+  "preserve_page_orientation": true,
+  "overwrite_output": true,
+  "generate_logs": true,
+
+  "sharpening_strength": "auto",
+  "denoise_strength": "auto",
+  "background_cleanup_strength": "auto",
+  "min_line_width_pt": "auto",
+
+  "mixed_page_mode": "hybrid",
+  "force_rasterize_all_pages": false,
+  "enhance_embedded_images": true,
+
+  "raster_compression": "jpeg",
+  "jpeg_quality": 92,
+
+  "include_subfolders": true,
+  "workers": "auto",
+  "verify_output": true,
+  "generate_preview": true,
+  "preview_folder": "previews",
+  "log_folder": "logs",
+
+  "_help": {
+    "target_dpi": "Raster resolution for scanned pages: 300, 400, 600, 800 or 1200. Higher = larger files and slower; it cannot add detail that the scan never had.",
+    "output_mode": "grayscale (recommended) or monochrome (pure black/white, photos are dithered).",
+    "darkness_level": "normal, strong, maximum_readable or low_toner. low_toner = darkest: all text and lines solid black and slightly bolder, for printers whose cartridge is running low (light grey prints as fading dots, solid black does not).",
+    "sharpening_strength / denoise_strength / background_cleanup_strength": "\"auto\" uses the preset value, or give a number from 0.0 (off) to 2.0 (very strong).",
+    "min_line_width_pt": "\"auto\" uses the preset; or a number in points. Hairlines in digital PDFs are thickened to at least this width.",
+    "mixed_page_mode": "hybrid = keep vector text/graphics and enhance embedded images (selectable text is kept); rasterize = turn mixed pages into enhanced images at target_dpi.",
+    "force_rasterize_all_pages": "true = treat every page like a scan (maximum uniformity, loses selectable text).",
+    "raster_compression": "jpeg (small files, visually lossless at quality 90+) or lossless (bigger files).",
+    "workers": "\"auto\" or a number of PDFs processed in parallel. Use 1 on low-memory computers.",
+    "generate_preview": "true = save a before/after PNG of page 1 of each document into preview_folder."
+  }
+}
