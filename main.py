@@ -92,12 +92,37 @@ def choose_workers(setting: Any, n_files: int, dpi: int) -> int:
     return max(1, min(max(1, cpus // 2), by_mem, n_files, 6))
 
 
+IMAGE_EXT = {".jpg", ".jpeg", ".png", ".tif", ".tiff", ".bmp", ".webp"}
+SUPPORTED_EXT = IMAGE_EXT | {".pdf"}
+
+
+def image_to_pdf(src: Path, dst: Path) -> None:
+    """Put a photo / scanned image on an A4 page (portrait or landscape) as a PDF."""
+    import io
+    from PIL import Image, ImageOps
+    with Image.open(src) as im:
+        im = ImageOps.exif_transpose(im)  # phone photos store rotation in EXIF
+        if im.mode not in ("RGB", "L"):
+            im = im.convert("RGB")
+        buf = io.BytesIO()
+        im.save(buf, format="JPEG", quality=95)
+        w, h = im.size
+    a4w, a4h = (595.0, 842.0) if h >= w else (842.0, 595.0)
+    doc = processor.fitz.open()
+    page = doc.new_page(width=a4w, height=a4h)
+    margin = 18.0
+    page.insert_image(processor.fitz.Rect(margin, margin, a4w - margin, a4h - margin),
+                      stream=buf.getvalue(), keep_proportion=True)
+    doc.save(str(dst))
+    doc.close()
+
+
 def find_pdfs(input_dir: Path, output_dir: Path, recursive: bool) -> List[Path]:
     pattern = "**/*" if recursive else "*"
     out_resolved = output_dir.resolve()
     found = []
     for p in input_dir.glob(pattern):
-        if not p.is_file() or p.suffix.lower() != ".pdf":
+        if not p.is_file() or p.suffix.lower() not in SUPPORTED_EXT:
             continue
         rel = p.relative_to(input_dir)
         if any(part.startswith(".") or part.startswith("~$") for part in rel.parts):
@@ -149,7 +174,7 @@ def print_summary(results: List[Dict[str, Any]], total: int, elapsed: float, out
     print("                    PDF PRINTER OPTIMIZER")
     print(LINE)
     print()
-    print(f"Total PDFs found:        {total}")
+    print(f"Total files found:       {total}")
     print(f"Successfully processed:  {ok}")
     print(f"Failed:                  {failed}")
     print(f"Skipped:                 {skipped}")
@@ -284,16 +309,32 @@ def main() -> int:
 
     pdfs = find_pdfs(input_dir, output_dir, cfg["include_subfolders"])
     if not pdfs:
-        print("\nNo PDF files were found in the input folder.")
-        print("Copy your PDF files into:\n  " + str(input_dir))
+        print("\nNo PDF or image files were found in the input folder.")
+        print("Copy your PDFs or photos (JPG, PNG, TIFF...) into:\n  " + str(input_dir))
         log.info("No PDF files found - nothing to do.")
         print_summary([], 0, 0.0, output_dir)
         return 0
 
     results: List[Dict[str, Any]] = []
     jobs: List[Dict[str, Any]] = []
+    import tempfile
+    img_tmp = Path(tempfile.mkdtemp(prefix="pdfopt-img-"))
     for src in pdfs:
         rel = src.relative_to(input_dir)
+        if src.suffix.lower() in IMAGE_EXT:
+            # images become PDFs: "photo.jpg" -> "photo.pdf" in output/
+            rel_out = rel.with_suffix(".pdf")
+            if (input_dir / rel_out).exists():
+                rel_out = rel.with_name(rel.name + ".pdf")
+            conv = img_tmp / f"{len(jobs)}_{rel_out.name}"
+            try:
+                image_to_pdf(src, conv)
+            except Exception as exc:
+                results.append({"file": str(rel), "status": "FAILED", "pages": 0, "dpi": "-", "seconds": 0.0,
+                                "input_size": src.stat().st_size, "output_size": 0, "warnings": [],
+                                "error": f"could not read image ({exc.__class__.__name__}: {exc})"})
+                continue
+            src, rel = conv, rel_out
         dst = output_dir / rel
         if dst.exists() and not cfg["overwrite_output"]:
             results.append({"file": str(rel), "status": "SKIPPED", "pages": 0, "dpi": "-", "seconds": 0.0,
@@ -309,7 +350,7 @@ def main() -> int:
     threads = max(1, (os.cpu_count() or 2) // workers)
     for j in jobs:
         j["threads"] = threads
-    print(f"\nFound {len(pdfs)} PDF file(s); processing {len(jobs)} with {workers} parallel worker(s)...\n")
+    print(f"\nFound {len(pdfs)} file(s); processing {len(jobs)} with {workers} parallel worker(s)...\n")
     log.info(f"{len(pdfs)} PDF(s) found, {len(jobs)} to process, workers={workers}")
 
     t0 = time.time()
@@ -347,7 +388,13 @@ def main() -> int:
         log.warning("Interrupted by user")
         clean_stale_temp(output_dir)
 
-    order = {str(p.relative_to(input_dir)): i for i, p in enumerate(pdfs)}
+    import shutil
+    shutil.rmtree(img_tmp, ignore_errors=True)
+    order = {}
+    for i, p in enumerate(pdfs):
+        r = p.relative_to(input_dir)
+        order[str(r)] = i
+        order[str(r.with_suffix(".pdf"))] = i
     results.sort(key=lambda r: order.get(r["file"], 1 << 30))
     elapsed = time.time() - t0
     print_summary(results, len(pdfs), elapsed, output_dir)

@@ -122,10 +122,10 @@ def run_menu(cfg: Dict[str, Any], config_path: Path, n_pdfs: int, input_dir: Pat
     print(LINE)
     print("                    PDF PRINTER OPTIMIZER")
     print(LINE)
-    print(f"PDFs waiting in the input folder: {n_pdfs}")
+    print(f"Files waiting in the input folder (PDFs and images): {n_pdfs}")
     print(f"  {input_dir}")
     if n_pdfs == 0:
-        print("\nCopy your PDF files into the folder above, then run the tool again.")
+        print("\nCopy your PDFs or photos (JPG, PNG, TIFF...) into the folder above, then run the tool again.")
         return None
     print("\nAnswer 4 quick questions. Press Enter to keep the current choice.")
 

@@ -100,7 +100,7 @@ dependencies automatically. This needs an internet connection once.
 
 ## 🧭 Using the tool
 
-1. **Copy your PDFs into `input/`.**
+1. **Copy your PDFs into `input/`.** Photos and scanned images (JPG, PNG, TIFF, BMP, WebP) work too: each is placed on an A4 page, enhanced and saved as a PDF with the same name.
 2. **Run the tool.** A short menu appears. Type a number and press Enter, or press Enter to keep the current choice:
 
 ```text
